@@ -1,1 +1,304 @@
-# API Osteocom
+---
+title: ✨ API Osteocom Documentacion
+---
+
+## ℹ️ Entornos
+
+- 🧪 **Entorno de pruebas**:  
+  `https://test.osteocom.me/sv6`
+
+- 🚀 **Entorno de producción**:  
+  `https://www.osteocom.me/sv6`
+
+---
+
+## 📝 Notas
+Hay que pedir a David Mallo el clientId y clientSecret porque tendra que pedir a Osteocom los de producción.
+
+---
+
+## Guía uso encadenado de las APIs
+
+### 1º API: Autorización
+Devuelve un token que se usará en el resto de APIs en `Authorization: Bearer TU_TOKEN`.
+
+### 2º  API: Catálogo
+Devuelve la información de los productos, de ahí se cogerá el `idChannel` y el `price` para la siguiente API y el `videoId` para la ultima API.
+
+### 3º API: Autorización para el contenido
+Devuelve el token que se usará en la siguiente API en el body como `userAccessKey`.
+
+### 4º API: Token del video
+Devuelve el token que se usara en el iframe.
+
+---
+
+## 🔐 API Autorización 
+
+### 📄 Descripción
+Permite obtener un token de autenticación, necesario para realizar cualquier otra petición a la API.
+
+### 📥 Ejemplo de solicitud
+
+**URL**: `/contentLicensing_login`
+
+**Método**: `POST`
+
+**Payload**:
+| Campo         | Tipo   | Obligatorio | Descripción                                            |
+|---------------|--------|-------------|--------------------------------------------------------|
+| `clientId`    | String |     ✅      | ID único del cliente, proporcionado por Osteocom.      |
+| `clientSecret`| String |     ✅      | Clave secreta del cliente, proporcionada por Osteocom. |
+
+**Body ejemplo:**
+```json
+{
+    "clientId":"xxxxxxxx",
+    "clientSecret":"xxxxxxxxx"
+}
+```
+--- 
+
+### ✅ Respuesta esperada
+
+| Campo      | Tipo   | Descripción                                     |
+|------------|--------|-------------------------------------------------|
+| `tokenType`| String | Token JWT a usar como Bearer en las siguientes llamadas. |
+
+```json
+{
+    "token": "xxxxxxxxx.xxxxxxxxxx.xxxxxxxxxx"
+}
+```
+
+
+### 🔁 Códigos de respuesta
+
+| Código | Descripción                          |
+|--------|--------------------------------------|
+| 200    | OK - Token válido.                   |
+| 401    | No autorizado - Cliente desconocido. |
+
+---
+
+## 📚 API Catálogo
+
+### 📄 Descripción
+Permite acceder al catálogo de contenido del cliente.
+
+---
+
+### ⚠️ IMPORTANTE
+Para esta API en las pruebas realizadas en el entorno de Pruebas cada vez que se realizaba la petición había que 
+poner un userId y un email distintos (inventados) ya que no permitia pedir 2 veces con el mismo userId y email 
+dando ❗500 Internal Error Server❗.
+Creemos que en el entorno de Producción eso no pasará pero no lo sabemos ya 
+que solo podiamos probar en el entorno de Pruebas.
+
+---
+
+### 📥 Ejemplo de solicitud
+
+**URL**: `/contentLicensing_catalog`
+
+**Método**: `POST`
+
+**Headers**:
+```
+Authorization: Bearer TU_TOKEN (obtenido en la API de autenticación)
+```
+
+**Payload**:
+| Campo      | Tipo   | Obligatorio | Descripción                                      |
+|------------|--------|-------------|--------------------------------------------------|
+| `clientId` | String |     ✅      | ID único del cliente.                            |
+
+**Body ejemplo:**
+```json
+{
+    "clientId":"xxxxxxx"
+}
+```
+---
+
+### ✅ Respuesta esperada
+
+| Campo      | Tipo   | Descripción                                     |
+|------------|--------|-------------------------------------------------|
+| `catalog`  | String | Array de objetos, cada uno representa un canal con detalles como autores, imágenes, vídeos, etc. |
+
+```json
+{
+    "catalog": [
+        {
+            "idChannel": "6790d4362d61c994a8e7333d", 
+            "authors": [
+                información de los autores
+            ],
+            "price": 500,
+            "video": [
+                {
+                    "videoId": "6790d792e700709e4b5d2b87",
+                    + información del video
+                },
+                {
+                    "videoId": "6790d993e700709e4b5e0515",
+                    + información del video
+                }
+            ],
+            "title": "titulo catalogo prueba",
+            "subtitle": null,
+            "htmlDescription": null
+        }
+    ]
+}
+```
+
+#### ⚠️ IMPORTANTE
+`idChannel`: esto será el productId de la siguiente API.
+
+`price`: esto será el price de la siguiente API.
+
+`videoId`: esto será el videoId de la ultima API.
+
+### 🔁 Códigos de respuesta
+
+| Código | Descripción               |
+|--------|----------------------------|
+| 200    | OK - Catálogo retornado.   |
+| 404    | No encontrado.             |
+| 500    | Error interno del servidor.|
+
+---
+
+## 🛒 API Content Access Authorization
+
+### 📄 Descripción
+Gestiona la autorización de contenido tras la compra, enviando información del usuario y los cursos adquiridos.
+
+### 📥 Ejemplo de solicitud
+
+**URL**: `/contentLicensing_contentAccessAuthorization`
+
+**Método**: `POST`
+
+**Headers**:
+```
+Authorization: Bearer TU_TOKEN (obtenido en la API de autenticación)
+```
+
+**Payload**:
+| Campo             | Tipo     | Obligatorio | Descripción                                                                |
+|-------------------|----------|-------------|----------------------------------------------------------------------------|
+| `clientId`        | String   |      ✅     | ID único del cliente.                                                      |
+| `userId`          | String   |      ✅     | ID único del usuario, definido por el partner.                             |
+| `email`           | String   |      ✅     | Correo del usuario (requerido si hay consentimiento de marketing).         |
+| `marketingConsent`| Boolean  |      ❌     | `true` si el usuario acepta comunicaciones comerciales.                    |
+| `name`            | String   |      ❌     | Nombre del usuario.                                                        |
+| `surname`         | String   |      ❌     | Apellido del usuario.                                                      |
+| `products`        | Array    |      ✅     | Lista de productos comprados con su precio correspondiente.                |
+
+**Body ejemplo:**
+```json
+{
+    "clientId": "xxxxxxxx",
+    "userId": "usuario",
+    "email": "email@usuario.com",
+    "products": [
+        {
+            "productId": "asdf",
+            "price": 500
+        }
+    ]
+}
+```
+
+---
+
+### ✅ Respuesta esperada
+
+| Campo       | Tipo   | Descripción                                     |
+|-------------|--------|-------------------------------------------------|
+| `tokenType` | String | Token para acceso al contenido comprado.        |
+
+```json
+{
+    "token": "xxxxxxxxxxxxxx.xxxxxxxxxxxxxxxx.xxxxxxxxxxxxx"
+}
+```
+
+### 🔁 Códigos de respuesta
+
+| Código | Descripción                       |
+|--------|-----------------------------------|
+| 200    | OK - Compra exitosa.              |
+| 400    | Campo `email` requerido.          |
+| 403    | Email mal formateado.             |
+| 500    | Error interno del servidor.       |
+
+---
+
+## 🎥 POST - Video Access API
+
+### 📄 Descripción
+Permite el acceso del usuario al contenido de vídeo previamente autorizado.
+
+### 📥 Ejemplo de solicitud
+
+**URL**: `/contentLicensing_videoAccess`
+
+**Método**: `POST`
+
+**Headers**:
+```
+Authorization: Bearer TU_TOKEN (obtenido en la API de autenticación)
+```
+
+**Payload**:
+| Campo             | Tipo   | Obligatorio | Descripción                                                            |
+|-------------------|--------|-------------|------------------------------------------------------------------------|
+| `userId`          | String |      ✅     | ID único del usuario, definido por el partner.                         |
+| `clientId`        | String |      ✅     | ID único del cliente.                                                  |
+| `videoId`         | String |      ✅     | ID único del vídeo.                                                    |
+| `userAccessKey`   | String |      ✅     | Clave de acceso que autentica al usuario.                              |
+
+**Body ejemplo:**
+```json
+{
+  "userId": "usuario",
+  "clientId": "xxxxxxxxx",
+  "videoId": "asdf1234567",
+  "userAccessKey": "xxxxxxxxxx.xxxxxxxxxxxx.xxxxxxxxxxxxx"
+}
+```
+---
+
+### ✅ Respuesta esperada
+
+| Campo            | Tipo   | Descripción                                                                                      |
+|------------------|--------|--------------------------------------------------------------------------------------------------|
+| `tokenAuthVideo` | String | Token a utilizar como parámetro en una URL dedicada para visualizar el vídeo en un `<iframe>`.   |
+
+```json
+{
+    "tokenAuthVideo": "xxxxxxxxxxxxxx.xxxxxxxxxxxxxxxx.xxxxxxxxxxxxx"
+}
+```
+#### IMPORTANTE
+Este **token caduca a los 15 minutos** de ser creado.
+
+Si el token caduca, al permanecer en la misma página, el video se podrá usar de todas formas.
+Una vez caducado el token, el enlace ya no se podrá usar desde el exterior, a menos que estes 
+autorizado para reintentar la llamada y generar un nuevo token. Esto significa que, 
+si el usuario actualiza la página, deberá realizar la llamada de nuevo para generar un nuevo 
+token que se usará en la URL que genera la nueva caducidad.
+
+### 🔁 Códigos de respuesta
+
+| Código | Descripción                              |
+|--------|------------------------------------------|
+| 200    | OK                                       |
+| 401    | Cliente no autorizado.                   |
+| 401    | Token de vídeo expirado.                 |
+| 404    | Vídeo no encontrado.                     |
+| 500    | Error interno del servidor.              |
