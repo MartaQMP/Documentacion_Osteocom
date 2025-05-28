@@ -13,7 +13,7 @@ title: ✨ API Osteocom Documentacion
 ---
 
 ## 📝 Notas
-Hay que pedir a David Mallo el clientId y clientSecret porque tendra que pedir a Osteocom los de producción.
+Hay que pedir a David Mallo el `clientId` y `clientSecret`, él tiene los del entorno de prueba y los de producción tendrá que pedirlos a Osteocom.
 
 ---
 
@@ -33,7 +33,7 @@ Devuelve el token que se usara en el iframe.
 
 ---
 
-## 🔐 API Autorización 
+## 🔐 Authorization API
 
 ### 📄 Descripción
 Permite obtener un token de autenticación, necesario para realizar cualquier otra petición a la API.
@@ -71,6 +71,8 @@ Permite obtener un token de autenticación, necesario para realizar cualquier ot
 }
 ```
 
+#### IMPORTANTE
+Este **token no caduca**.
 
 ### 🔁 Códigos de respuesta
 
@@ -81,19 +83,10 @@ Permite obtener un token de autenticación, necesario para realizar cualquier ot
 
 ---
 
-## 📚 API Catálogo
+## 📚 Catalog API
 
 ### 📄 Descripción
 Permite acceder al catálogo de contenido del cliente.
-
----
-
-### ⚠️ IMPORTANTE
-Para esta API en las pruebas realizadas en el entorno de Pruebas cada vez que se realizaba la petición había que 
-poner un userId y un email distintos (inventados) ya que no permitia pedir 2 veces con el mismo userId y email 
-dando ❗500 Internal Error Server❗.
-Creemos que en el entorno de Producción eso no pasará pero no lo sabemos ya 
-que solo podiamos probar en el entorno de Pruebas.
 
 ---
 
@@ -131,18 +124,18 @@ Authorization: Bearer TU_TOKEN (obtenido en la API de autenticación)
 {
     "catalog": [
         {
-            "idChannel": "6790d4362d61c994a8e7333d", 
+            "idChannel": "asdf", 
             "authors": [
                 información de los autores
             ],
             "price": 500,
             "video": [
                 {
-                    "videoId": "6790d792e700709e4b5d2b87",
+                    "videoId": "asdf12345",
                     + información del video
                 },
                 {
-                    "videoId": "6790d993e700709e4b5e0515",
+                    "videoId": "ghjk67890",
                     + información del video
                 }
             ],
@@ -155,15 +148,15 @@ Authorization: Bearer TU_TOKEN (obtenido en la API de autenticación)
 ```
 
 #### ⚠️ IMPORTANTE
-`idChannel`: esto será el productId de la siguiente API.
+`idChannel`: esto será el productId de la siguiente API. [Ver aquí](#-api-content-access-authorization).
 
-`price`: esto será el price de la siguiente API.
+`price`: esto será el price de la siguiente API. [Ver aquí](#-api-content-access-authorization).
 
-`videoId`: esto será el videoId de la ultima API.
+`videoId`: esto será el videoId de la ultima API. [Ver aquí](#-video-access-api).
 
 ### 🔁 Códigos de respuesta
 
-| Código | Descripción               |
+| Código | Descripción                |
 |--------|----------------------------|
 | 200    | OK - Catálogo retornado.   |
 | 404    | No encontrado.             |
@@ -176,6 +169,16 @@ Authorization: Bearer TU_TOKEN (obtenido en la API de autenticación)
 ### 📄 Descripción
 Gestiona la autorización de contenido tras la compra, enviando información del usuario y los cursos adquiridos.
 
+--- 
+
+### ⚠️ IMPORTANTE
+Para esta API en las pruebas realizadas en el entorno de Pruebas cada vez que se realizaba la petición había que 
+poner un userId y un email distintos (inventados) ya que no permitia pedir 2 veces con el mismo userId y email 
+dando ❗500 Internal Error Server❗.
+Creemos que en el entorno de Producción eso no pasará pero no lo sabemos ya 
+que solo podiamos probar en el entorno de Pruebas.
+
+---
 ### 📥 Ejemplo de solicitud
 
 **URL**: `/contentLicensing_contentAccessAuthorization`
@@ -213,6 +216,9 @@ Authorization: Bearer TU_TOKEN (obtenido en la API de autenticación)
 }
 ```
 
+#### 📝 Nota
+El `productId` y el `price` usados aqui son los mencionados en la API anterior.
+
 ---
 
 ### ✅ Respuesta esperada
@@ -227,6 +233,13 @@ Authorization: Bearer TU_TOKEN (obtenido en la API de autenticación)
 }
 ```
 
+#### IMPORTANTE
+Este **token no caduca**.
+
+Pero aunque no caduque, solo lo obtienes 1 vez con ese usuario e email (al menos en las pruebas realizadas en el 
+entorno de pruebas, creemos que en el entorno de producción esto no deberia ocurrir y se podrá pedir las 
+veces que haga falta con el mismo userId e email).
+
 ### 🔁 Códigos de respuesta
 
 | Código | Descripción                       |
@@ -238,7 +251,7 @@ Authorization: Bearer TU_TOKEN (obtenido en la API de autenticación)
 
 ---
 
-## 🎥 POST - Video Access API
+## 🎥 Video Access API
 
 ### 📄 Descripción
 Permite el acceso del usuario al contenido de vídeo previamente autorizado.
@@ -251,7 +264,7 @@ Permite el acceso del usuario al contenido de vídeo previamente autorizado.
 
 **Headers**:
 ```
-Authorization: Bearer TU_TOKEN (obtenido en la API de autenticación)
+Authorization: Bearer TU_TOKEN (obtenido en la API de autenticación).
 ```
 
 **Payload**:
@@ -267,10 +280,14 @@ Authorization: Bearer TU_TOKEN (obtenido en la API de autenticación)
 {
   "userId": "usuario",
   "clientId": "xxxxxxxxx",
-  "videoId": "asdf1234567",
+  "videoId": "asdf12345",
   "userAccessKey": "xxxxxxxxxx.xxxxxxxxxxxx.xxxxxxxxxxxxx"
 }
 ```
+
+#### 📝 Nota
+El `videoId` usado aqui es el mencionado en la API de catálogo.
+
 ---
 
 ### ✅ Respuesta esperada
@@ -284,6 +301,7 @@ Authorization: Bearer TU_TOKEN (obtenido en la API de autenticación)
     "tokenAuthVideo": "xxxxxxxxxxxxxx.xxxxxxxxxxxxxxxx.xxxxxxxxxxxxx"
 }
 ```
+
 #### IMPORTANTE
 Este **token caduca a los 15 minutos** de ser creado.
 
@@ -302,3 +320,70 @@ token que se usará en la URL que genera la nueva caducidad.
 | 401    | Token de vídeo expirado.                 |
 | 404    | Vídeo no encontrado.                     |
 | 500    | Error interno del servidor.              |
+
+---
+
+## 🎬 Uso del Iframe para reproducción de videos de Osteocom
+
+---
+
+### 🔗 URL base del iframe
+
+Utiliza esta URL como la **primera parte de la fuente del iframe**.  
+La ruta predeterminada es:
+```
+<urlPrefix>/en/videoaccess
+```
+---
+
+### 🌐 Entornos disponibles
+
+- 🧪 **Entorno de pruebas**:  
+  `https://test.osteocom.me/`
+
+- 🚀 **Entorno de producción**:  
+  `https://www.osteocom.me/`
+
+---
+
+### 🧱 Estructura básica del iframe
+
+Para cargar el video, concatena el parámetro `signature` con el valor del `tokenAuthVideo` recibido de la API de acceso al video.  [Ver aquí API](#-video-access-api).
+
+#### ✅ Ejemplo de uso:
+
+```html
+<iframe src="https://xxx.osteocom.me/en/videoaccess?signature=tokenAuthVideo"></iframe>
+```
+
+--- 
+
+### ⚙️ Propiedades adicionales del iframe
+
+---
+
+#### 🔳 `allowfullscreen`
+
+Permite que el reproductor entre en **modo pantalla completa**.  
+Este atributo debe estar presente para que funcione correctamente:
+
+```html
+<iframe src="..." allowfullscreen></iframe>
+```
+
+---
+
+#### 🌍 Subtítulos (Idioma por defecto)
+
+Para definir el idioma por defecto de los subtítulos, usa el parámetro adicional `sublang` concatenado con la URL del iframe:
+
+```html
+<iframe src="https..............&sublang=es" allowfullscreen></iframe>
+```
+
+| Llave  | Idioma                  |
+|--------|-------------------------|
+| `it`   | Italiano                |
+| `en`   | Inglés                  |
+| `fr`   | Francés                 |
+| `es`   | Español                 |
